@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  base: '/better-units/',
+  base: '/',
   plugins: [
     react(),
     mode === 'development' &&
