@@ -17,10 +17,10 @@ const unitDescriptions: Record<string, string> = {
   centimeters: 'Centimeters are a metric unit of length, equal to one hundredth of a meter.',
   millimeters: 'Millimeters are a metric unit of length, equal to one thousandth of a meter.',
   // Fun units
-  bananas: 'A banana is a fun, informal unit of length, roughly 16.7 cm.',
-  pencil_lengths: 'A pencil length is about 17.5 cm, used for playful comparisons.',
-  cat_whiskers: 'A cat whisker is about 5 cm, a whimsical unit of length.',
-  gummy_bears: 'A gummy bear is about 2 cm long, used for fun measurements.',
+  bananas: 'A banana is an informal unit of length, roughly 16.7 cm.',
+  pencil_lengths: 'A pencil length is about 17.5 cm, used for comparisons.',
+  cat_whiskers: 'A cat whisker is about 5 cm, a unit of length.',
+  gummy_bears: 'A gummy bear is about 2 cm long, used for measurements and filling your belly.',
   floppy_disks: 'A floppy disk (3.5") diagonal is about 9.4 cm.',
   wizard_wands: 'A wizard wand is about 35 cm, for magical measurements.',
   pirate_steps: 'A pirate step is about 75 cm, for adventurous distances.',
@@ -141,20 +141,41 @@ const measureTypes = {
   volume: { icon: Beaker, label: 'Volume', units: Object.keys(conversions.volume) }
 };
 
+
+function getRandomUnits(units: string[]): [string, string] {
+  if (units.length < 2) return [units[0], units[0]];
+  const fromIdx = Math.floor(Math.random() * units.length);
+  let toIdx = Math.floor(Math.random() * (units.length - 1));
+  if (toIdx >= fromIdx) toIdx++;
+  return [units[fromIdx], units[toIdx]];
+}
+
 export default function UnitConverter() {
   const [activeTab, setActiveTab] = useState<keyof typeof conversions>('length');
-  const [fromUnit, setFromUnit] = useState('meters');
-  const [toUnit, setToUnit] = useState('feet');
-  const [fromValue, setFromValue] = useState('');
-  const [toValue, setToValue] = useState('');
+  const initialUnits = getRandomUnits(measureTypes['length'].units);
+  const [fromUnit, setFromUnit] = useState(initialUnits[0]);
+  const [toUnit, setToUnit] = useState(initialUnits[1]);
+  const [fromValue, setFromValue] = useState('1.0');
+  const [toValue, setToValue] = useState(() => {
+    // Calculate initial toValue based on 1.0
+    const conversionData = conversions['length'];
+    const baseValue = 1.0 / conversionData[initialUnits[0]].factor;
+    const result = baseValue * conversionData[initialUnits[1]].factor;
+    return result.toFixed(6).replace(/\.?0+$/, '');
+  });
 
   // Reset units when tab changes
   useEffect(() => {
     const units = measureTypes[activeTab].units;
-    setFromUnit(units[0]);
-    setToUnit(units[1]);
-    setFromValue('');
-    setToValue('');
+    const [randFrom, randTo] = getRandomUnits(units);
+    setFromUnit(randFrom);
+    setToUnit(randTo);
+    setFromValue('1.0');
+    // Calculate toValue for 1.0
+    const conversionData = conversions[activeTab];
+    const baseValue = 1.0 / conversionData[randFrom].factor;
+    const result = baseValue * conversionData[randTo].factor;
+    setToValue(result.toFixed(6).replace(/\.?0+$/, ''));
   }, [activeTab]);
 
   // Update conversion when fromUnit changes
@@ -235,7 +256,9 @@ export default function UnitConverter() {
             className="w-40 h-40 object-contain mb-2 border rounded-lg bg-gray-50"
             loading="lazy"
           />
-          <div className="font-semibold text-lg capitalize mb-1">{fromUnit.replace('-', ' ')}</div>
+          <div className="font-semibold text-lg mb-1">{
+            fromUnit.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+          }</div>
           <div className="text-sm text-muted-foreground text-center">
             {unitDescriptions[fromUnit] || 'No description available.'}
           </div>
@@ -248,7 +271,9 @@ export default function UnitConverter() {
             className="w-40 h-40 object-contain mb-2 border rounded-lg bg-gray-50"
             loading="lazy"
           />
-          <div className="font-semibold text-lg capitalize mb-1">{toUnit.replace('-', ' ')}</div>
+          <div className="font-semibold text-lg mb-1">{
+            toUnit.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+          }</div>
           <div className="text-sm text-muted-foreground text-center">
             {unitDescriptions[toUnit] || 'No description available.'}
           </div>
@@ -294,7 +319,7 @@ export default function UnitConverter() {
                         {units.map((unit) => (
                           <SelectItem key={unit} value={unit}>
                             <div className="flex items-center justify-between w-full">
-                              <span className="capitalize">{unit.replace('-', ' ')}</span>
+                              <span>{unit.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
                                <span className="text-muted-foreground ml-2">
                                  ({conversions[activeTab][unit]?.symbol})
                                </span>
